@@ -1,0 +1,309 @@
+openapi: 3.0.0
+info:
+    title: Fix it now API
+    version: 1.0.0
+tags:
+    -   name: User
+        description: Everything about User
+    -   name: Problems
+        description: All about rooms
+components:
+    schemes:
+        RegisterCredential:
+            type: object
+            properties:
+                username:
+                    type: string
+                    description: 
+                login:
+                    type: string
+                    description: The login of user
+                password:
+                    type: string
+                    description: The password of user
+                user_role:
+                    type: string
+                    enum:
+                        - user
+                        - admin
+            required:
+                - *
+
+        LoginCredentials:
+            type: object
+            properties:
+                login:
+                    type: string
+                    description: The login of user
+                password:
+                    type: string
+                    description: The password of user
+            required:
+                - *
+
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            BearerFormat: JWT
+
+paths:
+    /register:
+        post:
+            summary: Register a new user
+            tags:
+                - User
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/User'
+            responses:
+                '201':
+                    description: User created successfully
+                '400':
+                    description: A user with that username already exists
+
+    /login:
+        post:
+            summary: Login a user
+            tags:
+                - User
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemes/User'
+            responses:
+                '200':
+                    description: Login successful
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    access_token:
+                                        type: string
+                                        description: The access token for the user
+                '401':
+                    description: Invalid credentials
+                '404':
+                    description: User not found
+
+    /logout:
+        post:
+            summary: Logout a user
+            tags:
+                - User
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Successfully logged out
+                '400':
+                    description: Invalid token
+
+    /user/{user_id}:
+        get:
+            summary: Get a user by ID
+            tags:
+                - User
+            parameters:
+                -   name: user_id
+                    in: path
+                    description: The ID of the user to get
+                    required: true
+                    schema:
+                        type: integer
+            responses:
+                '200':
+                    description: User found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemes/UserOutputObject'
+                '404':
+                    description: User not found
+        delete:
+            summary: Delete a user by ID
+            tags:
+                - User
+            parameters:
+                -   name: user_id
+                    in: path
+                    description: The ID of the user to delete
+                    required: true
+                    schema:
+                        type: integer
+            responses:
+                '200':
+                    description: User succesfully deleted
+                '404':
+                    description: User not found
+
+
+    /rooms:
+        get:
+            summary: Get a list of rooms
+            tags:
+                - Rooms
+            parameters:
+                -   in: query
+                    name: offset
+                    schema:
+                        type: integer
+                        description: The count of items to skip before starting to collect the result set
+                -   in: query
+                    name: size
+                    schema:
+                        type: string
+                        description: The count of items to return
+                -   in: query
+                    name: sort_by_cost
+                    schema:
+                        type: boolean
+                        description: Sort the results by cost
+                -   in: query
+                    name: rate
+                    schema:
+                        type: integer
+                        description: This value is ignored
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RoomList'
+                '404':
+                    description: Rooms not found
+        post:
+            summary: Create a new room
+            tags:
+                - Rooms
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RoomInputObject'
+            responses:
+                '200':
+                    description: Successfully created room
+                '400':
+                    description: Missed one or more arguments
+
+    /rooms/{room_id}/photo:
+        get:
+            summary: Get a photo of a room by ID
+            tags:
+                - Rooms
+            parameters:
+                -   name: room_id
+                    in: path
+                    description: The ID of the room to get the photo of
+                    required: true
+                    schema:
+                        type: integer
+            responses:
+                '200':
+                    description: Photo found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PhotoList'
+                '404':
+                    description: Photos not found
+        post:
+            summary: Post a photo by the room_id
+            tags:
+                - Rooms
+            parameters:
+                -   name: room_id
+                    in: path
+                    required: true
+                    schema:
+                        type: integer
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            type: object
+                            properties:
+                                photo:
+                                    type: string
+                                    format: binary
+                                title:
+                                    type: string
+                                    description: The title of photo
+                                description:
+                                    type: string
+                                    description: The description of photo
+            responses:
+                '200':
+                    description: Photo successfully uploaded
+                '400':
+                    description: Missed one or more arguments
+
+    /rooms/{room_id}:
+        get:
+            summary: Get a room by ID
+            tags:
+                - Rooms
+            parameters:
+                -   name: room_id
+                    in: path
+                    description: The ID of the room to get
+                    required: true
+                    schema:
+                        type: integer
+            responses:
+                '200':
+                    description: Room found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RoomOutputObject'
+                '404':
+                    description: Room not found
+        put:
+            summary: Update room information
+            tags:
+                - Rooms
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RoomInputObject'
+            parameters:
+                -   name: room_id
+                    in: path
+                    description: The id of room for update
+                    required: true
+                    schema:
+                        type: string
+            responses:
+                '201':
+                    description: Successfully updated room
+                '400':
+                    description: Missed one or more arguments
+        delete:
+            summary: Delete room by ID
+            tags:
+                - Rooms
+            parameters:
+                -   name: room_id
+                    in: path
+                    description: The id of room to delete
+                    required: true
+                    schema:
+                        type: string
+            responses:
+                '200':
+                    description: Room successfully deleted
+                '404':
+                    description: Room not found
